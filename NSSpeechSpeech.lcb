@@ -1,0 +1,40 @@
+library community.paulmcclernan.speechsynth
+
+use com.livecode.foreign
+use com.livecode.objc
+
+metadata title is "Speech Synth Library"
+metadata author is "Simon (Skids) Knight"
+metadata version is "1.0.0"
+metadata OS is "iOS"
+
+
+variable sNSSpeechSynth as ObjCId
+
+-- bind the memory allocation handler - ok
+private foreign handler ObjC_NSSpeechSynthAlloc() \
+			returns optional ObjcID \
+			binds to "objc:AppKit>NSSpeechSynthesizer.+alloc"
+
+-- bind the initialisation of new object - ok
+private foreign handler ObjC_NSSpeechSynthInitWithVoice(in pObj as ObjcID, in pNSStrVoiceName as ObjcID ) \
+			returns optional ObjcRetainedID \
+			binds to "objc:AppKit>NSSpeechSynthesizer.-initWithVoice:" -- can be null for default voice
+
+
+-- 			- startSpeakingString:toURL: -- Begins synthesizing text into a sound (AIFF) file.
+public handler lcbNSSpeechSynthInit() returns otpional Boolean
+	variable tArrayOfVoices as objcObject  // array of AVSpeechSythesisVoice Objects
+	variable tVoices as String
+	unsafe
+		put ObjC_NSSpeechSynthAlloc() into sNSSpeechSynth
+		put ObjC_NSSpeechSynthInitWithVoice(sNSSpeechSynth,nothing) into sNSSpeechSynth
+	end unsafe
+	if sNSSpeechSynth is nothing then
+		return false
+	else
+		return true
+	end if
+end handler
+
+end library

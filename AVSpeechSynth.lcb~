@@ -1,0 +1,180 @@
+/**
+Speak aloud some text on iOS. A function that take a string and speak it
+Name: smkSpeakText
+Type: function
+*/
+library net.anvic.skids.speechsynth
+
+use com.livecode.foreign
+use com.livecode.objc
+
+metadata title is "Speech Synth Library"
+metadata author is "Simon (Skids) Knight"
+metadata version is "1.0.0"
+metadata OS is "iOS"
+
+
+
+-- bind the memory allocation handler - ok
+private foreign handler ObjC_AVSpeechSynthAlloc() \
+			returns optional ObjcID \
+			binds to "objc:AVFoundation>AVSpeechSynthesizer.+alloc"
+
+-- bind the initialisation of new object - ok
+private foreign handler ObjC_AVSpeechSynthInit(in pObj as ObjcID) \
+			returns optional ObjcRetainedID \
+			binds to "objc:AVFoundation>AVSpeechSynthesizer.-init"
+
+
+
+-- Now create an 'Utterance' to be passed to the AVSpeechSynthesizer
+private foreign handler ObjC_AVSpeechUtteranceAlloc() \
+			returns optional ObjcID \
+			binds to "objc:AVFoundation>AVSpeechUtterance.+alloc"
+
+private foreign handler ObjC_AVSpeechUtteranceInitWithString(in pObj as ObjcID, in pText as objcID) \
+      	returns optional ObjcRetainedID \
+      	binds to "objc:AVFoundation>AVSpeechUtterance.-initWithString:"
+
+private foreign handler ObjC_AVSpeechUtteranceSetVoice(in pUtteranceObj as ObjcID, in pVoiceObject as objcID) \
+      	returns optional ObjcRetainedID \
+      	binds to "objc:AVFoundation>AVSpeechUtterance.setVoice:"
+
+-- Now the method to send the utterance to the AVSpeechSynthesizer
+
+private foreign handler ObjC_SpeakUtterance(in pObj as ObjcID, in pUtterance as ObjcID) \
+			returns nothing \
+			binds to "objc:AVFoundation>AVSpeechSynthesizer.-speakUtterance:"
+--
+-- return a list of voices in an array of AVSpeechSynthesisVoice objects
+private foreign handler ObjC_AVSpeechSynthesisVoices() \
+		returns ObjcID \
+		binds to "objc:AVFoundation>AVSpeechSynthesisVoice.+speechVoices"
+
+private foreign handler Objc_NameOfVoiceNSstring (in pObj as objcID) \
+			returns ObjcID  \
+			binds to "objc:AVFoundation>AVSpeechSynthesisVoice.name"
+
+private foreign handler Objc_LanguageOfVoiceNSstring (in pObj as objcID) \
+			returns ObjcID  \
+			binds to "objc:AVFoundation>AVSpeechSynthesisVoice.language"
+
+			/**
+			Summary: Get a list of available voices
+			**/
+variable sVoicesList as List  -- of objcObjects that should stay available between calls
+
+public handler smkListOfVoices() returns String
+	// Note this should always be called even if LCS knows the name of a voice
+	// it wants to use.
+	variable tArrayOfVoices as objcObject  // array of AVSpeechSythesisVoice Objects
+	variable tVoices as String
+	unsafe
+		put ObjC_AVSpeechSynthesisVoices() into tArrayOfVoices
+		put AV_ReadVoices(tArrayOfVoices) into tVoices
+	end unsafe
+
+	return tVoices
+
+end handler
+
+private handler AV_ReadVoices(in pNSArrayOfVoices as objcID) returns String
+	variable tVoicesList as List  -- native List LCB type
+	variable tVoiceObj as objcObject -- AVSpeechSythesisVoice object
+	variable tNameObj as objcObject -- NSString
+	variable tLanguageObj as objcObject -- NSString
+	variable tFoundVoices as String -- native string that will be returned
+
+	if pNSArrayOfVoices is not nothing then
+		put listFromNSArray(pNSArrayOfVoices) into sVoicesList
+	else
+		return "Empty Array Passed into AV_ReadVoices"
+	end if
+	-- Loop through the voice objects in the list reading the name
+	repeat for each element tVoiceObj in sVoicesList
+		unsafe
+			if Objc_NameOfVoiceNSstring(tVoiceObj) is not nothing then
+				put Objc_NameOfVoiceNSstring(tVoiceObj) into tNameObj
+				put Objc_LanguageOfVoiceNSstring(tVoiceObj) into tLanguageObj
+				put StringFromNSString(tLanguageObj) & "," & StringFromNSString(tNameObj) & ";" after tFoundVoices
+			end if
+		end unsafe
+	end repeat
+
+	-- tidy up return string
+	if tFoundVoices ends with ";" then
+		delete the last char of tFoundVoices
+	end if
+
+	return tFoundVoices
+end handler
+
+/**
+Summary: Speak some text, specifying the voice to be used.
+ smkSpeakText("hello World","Daniel")
+Type: function
+**/
+
+public handler smkSpeakText(in pText as String, in pVoiceName as String) returns String
+	variable tSpeechSynth as objcObject
+	variable tUtterance as objcObject
+	variable tTextToSpeak as objcObject
+
+	variable tVoiceObj as objcObject
+
+	-- call function to look up and return voice object
+	put GetVoiceObjectNamed(pVoiceName) into tVoiceObj
+	if tVoiceObj is nothing then
+		return " error getting voice object to use"
+	end if
+
+	unsafe
+
+		-- convert the string passed into a NSString object
+		put StringToNSString(pText) into tTextToSpeak
+
+		-- create instance of SpeechSynth
+		put ObjC_AVSpeechSynthAlloc() into tSpeechSynth
+		put ObjC_AVSpeechSynthInit(tSpeechSynth) into tSpeechSynth
+
+		-- create instance of Utterance
+		put ObjC_AVSpeechUtteranceAlloc() into tUtterance
+		put ObjC_AVSpeechUtteranceInitWithString(tUtterance,tTextToSpeak) into tUtterance
+
+		-- new code to set voice
+		ObjC_AVSpeechUtteranceSetVoice(tUtterance, tVoiceObj)
+
+		-- Lastly Speak the Utterance
+		ObjC_SpeakUtterance(tSpeechSynth,tUtterance)
+
+	end unsafe
+	return "Complete"
+end handler
+
+private handler GetVoiceObjectNamed(in pVoiceName as String) returns objcObject
+	variable tVoiceObj as ObjcObject  -- this will be returned
+	variable tNameObj as ObjcObject -- An NSstring object
+	variable tVoiceName as String
+
+	-- Loop through the voice objects in the list reading the name
+	repeat for each element tVoiceObj in sVoicesList
+		unsafe
+			if Objc_NameOfVoiceNSstring(tVoiceObj) is not nothing then
+				put Objc_NameOfVoiceNSstring(tVoiceObj) into tNameObj
+				put StringFromNSString(tNameObj) into tVoiceName
+
+				if tVoiceName is pVoiceName then
+					-- correct object found so stop repeating
+					exit repeat
+				end if
+			else
+				-- an error has occured
+				return nothing
+			end if
+		end unsafe
+	end repeat
+	-- this will either return the correct voice or the last voice in list
+	return tVoiceObj
+end handler
+
+end library
