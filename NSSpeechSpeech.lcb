@@ -3,13 +3,16 @@ library community.paulmcclernan.speechsynth
 use com.livecode.foreign
 use com.livecode.objc
 
-metadata title is "Speech Synth Library"
-metadata author is "Simon (Skids) Knight"
+metadata title is "NSSpeechSynth"
+metadata author is "Paul McClernan"
 metadata version is "1.0.0"
-metadata OS is "iOS"
+metadata OS is "macOS"
 
 
 variable sNSSpeechSynth as ObjCId
+
+
+private foreign handler objC_NSURLfileURLWithPath(in pPathString as ObjcId) returns ObjcId binds to "objc:NSURL.+fileURLWithPath:"
 
 -- bind the memory allocation handler - ok
 private foreign handler ObjC_NSSpeechSynthAlloc() \
@@ -17,15 +20,20 @@ private foreign handler ObjC_NSSpeechSynthAlloc() \
 			binds to "objc:AppKit>NSSpeechSynthesizer.+alloc"
 
 -- bind the initialisation of new object - ok
-private foreign handler ObjC_NSSpeechSynthInitWithVoice(in pObj as ObjcID, in pNSStrVoiceName as ObjcID ) \
+private foreign handler ObjC_NSSpeechSynthInitWithVoice(in pObj as ObjcID, in pNSStrVoiceName as optional ObjcID ) \
 			returns optional ObjcRetainedID \
 			binds to "objc:AppKit>NSSpeechSynthesizer.-initWithVoice:" -- can be null for default voice
 
+private foreign handler ObjC_NSSpeechSynthStartSpeakingString(in pObj as ObjcID, in pNSStrToSpeak as optional ObjcID ) \
+						returns CBool \
+						binds to "objc:AppKit>NSSpeechSynthesizer.-startSpeakingString:"
 
--- 			- startSpeakingString:toURL: -- Begins synthesizing text into a sound (AIFF) file.
-public handler lcbNSSpeechSynthInit() returns otpional Boolean
-	variable tArrayOfVoices as objcObject  // array of AVSpeechSythesisVoice Objects
-	variable tVoices as String
+private foreign handler ObjC_NSSpeechSynthStartSpeakingStringToURL(in pObj as ObjcID, in pNSStrToSpeak as ObjcID, in pNSURLSoundFile as ObjcID) \
+						returns CBool \
+						binds to "objc:AppKit>NSSpeechSynthesizer.-startSpeakingString:toURL:" --Begins synthesizing text into a sound (AIFF) file.
+
+
+public handler lcbNSSpeechSynthInit() returns optional Boolean
 	unsafe
 		put ObjC_NSSpeechSynthAlloc() into sNSSpeechSynth
 		put ObjC_NSSpeechSynthInitWithVoice(sNSSpeechSynth,nothing) into sNSSpeechSynth
@@ -35,6 +43,28 @@ public handler lcbNSSpeechSynthInit() returns otpional Boolean
 	else
 		return true
 	end if
+end handler
+
+public handler lcbNSSpeechSynthSpeakString(in pSpeakString as String) returns optional Boolean
+	variable tSuccess as Boolean
+	if sNSSpeechSynth is not nothing then
+		unsafe
+			put ObjC_NSSpeechSynthStartSpeakingString(sNSSpeechSynth,StringToNSString(pSpeakString)) into tSuccess
+		end unsafe
+	end if
+	return tSuccess
+end handler
+
+public handler lcbNSSpeechSynthSpeechStringToFile(in pSpeakString as String, in pOutFilePath as String) returns optional Boolean
+	variable tFileNSURL as ObjcObject
+	variable tSuccess as Boolean
+	if sNSSpeechSynth is not nothing then
+		unsafe
+		put objC_NSURLfileURLWithPath(StringToNSString(pOutFilePath)) into tFileNSURL
+		put ObjC_NSSpeechSynthStartSpeakingStringToURL(sNSSpeechSynth,StringToNSString(pSpeakString),tFileNSURL) into tSuccess
+		end unsafe
+	end if
+	return tSuccess
 end handler
 
 end library
