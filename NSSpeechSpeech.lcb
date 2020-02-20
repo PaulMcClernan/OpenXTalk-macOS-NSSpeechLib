@@ -9,39 +9,47 @@ metadata version is "1.0.0"
 metadata OS is "macOS"
 
 
-variable sNSSpeechSynth as ObjCId
+variable sNSSpeechSynth as ObjcObject
 
 
-private foreign handler objC_NSURLfileURLWithPath(in pPathString as ObjcId) returns ObjcId binds to "objc:NSURL.+fileURLWithPath:"
+private foreign handler objC_NSURLfileURLWithPath(in pPathString as ObjcId) returns ObjcID binds to "objc:NSURL.+fileURLWithPath:"
+private foreign handler ObjC_NSArrayComponentsJoinedByString(in pObj as ObjcID, in pSeperator as ObjcId) returns ObjcId binds to "objc:NSArray.-componentsJoinedByString:"
 
--- bind the memory allocation handler - ok
-private foreign handler ObjC_NSSpeechSynthAlloc() \
-			returns optional ObjcID \
-			binds to "objc:AppKit>NSSpeechSynthesizer.+alloc"
+-- bind the allocation handler
+private foreign handler ObjC_NSSpeechSynthAlloc() returns optional ObjcID binds to "objc:AppKit>NSSpeechSynthesizer.+alloc"
 
 -- bind the initialisation of new object - ok
-private foreign handler ObjC_NSSpeechSynthInitWithVoice(in pObj as ObjcID, in pNSStrVoiceName as optional ObjcID ) \
-			returns optional ObjcRetainedID \
-			binds to "objc:AppKit>NSSpeechSynthesizer.-initWithVoice:" -- can be null for default voice
+private foreign handler ObjC_NSSpeechSynthInitWithVoice(in pNSSpeechSynthObj as ObjcID, in pNSStrVoiceName as ObjcId ) \
+			returns optional ObjcRetainedID binds to "objc:AppKit>NSSpeechSynthesizer.-initWithVoice:" -- can be null for default voice
 
-private foreign handler ObjC_NSSpeechSynthStartSpeakingString(in pObj as ObjcID, in pNSStrToSpeak as optional ObjcID ) \
-						returns CBool \
-						binds to "objc:AppKit>NSSpeechSynthesizer.-startSpeakingString:"
+private foreign handler ObjC_NSSpeechSynthSetVoice(in pNSSpeechSynthObj as ObjcID, in pNSStrVoiceName as ObjcId ) \
+			returns CBool binds to "objc:AppKit>NSSpeechSynthesizer.-setVoice:" -- can be null for default voice
 
-private foreign handler ObjC_NSSpeechSynthStartSpeakingStringToURL(in pObj as ObjcID, in pNSStrToSpeak as ObjcID, in pNSURLSoundFile as ObjcID) \
-						returns CBool \
-						binds to "objc:AppKit>NSSpeechSynthesizer.-startSpeakingString:toURL:" --Begins synthesizing text into a sound (AIFF) file.
+private foreign handler ObjC_NSSpeechSyntCurrenthVoice(in pNSSpeechSynthObj as ObjcId) \
+						returns ObjcId binds to "objc:AppKit>NSSpeechSynthesizer.voice"
 
+private foreign handler ObjC_NSSpeechSynthAvailableVoices() returns ObjcID binds to "objc:AppKit>NSSpeechSynthesizer.+availableVoices"
 
-public handler lcbNSSpeechSynthInit() returns optional Boolean
+private foreign handler ObjC_NSSpeechSynthGetProperty(in pNSSpeechSynthObj as ObjcID, in pNSStrPropToGet as ObjcID) \
+						returns optional ObjcId binds to "objc:AppKit>NSSpeechSynthesizer.-valueForKey:"
+
+private foreign handler ObjC_NSSpeechSynthStartSpeakingString(in pNSSpeechSynthObj as ObjcID, in pNSStrToSpeak as optional ObjcID ) \
+			returns CBool binds to "objc:AppKit>NSSpeechSynthesizer.-startSpeakingString:"
+
+private foreign handler ObjC_NSSpeechSynthStartSpeakingStringToURL(in pNSSpeechSynthObj as ObjcID, in pNSStrToSpeak as ObjcID, in pNSURLSoundFile as ObjcID) \
+			returns CBool binds to "objc:AppKit>NSSpeechSynthesizer.-startSpeakingString:toURL:" --Begins synthesizing text into a sound (AIFF) file.
+
+public handler lcbNSSpeechSynthInit(in pVoiceStr as String) returns optional any
+	variable tNSString as ObjcObject
 	unsafe
 		put ObjC_NSSpeechSynthAlloc() into sNSSpeechSynth
-		put ObjC_NSSpeechSynthInitWithVoice(sNSSpeechSynth,nothing) into sNSSpeechSynth
+		put ObjC_NSSpeechSynthInitWithVoice(sNSSpeechSynth,StringToNSString(pVoiceStr)) into sNSSpeechSynth
+		put ObjC_NSSpeechSyntCurrenthVoice(sNSSpeechSynth) into tNSString
 	end unsafe
 	if sNSSpeechSynth is nothing then
 		return false
 	else
-		return true
+		return StringFromNSString(tNSString)
 	end if
 end handler
 
@@ -65,6 +73,41 @@ public handler lcbNSSpeechSynthSpeechStringToFile(in pSpeakString as String, in 
 		end unsafe
 	end if
 	return tSuccess
+end handler
+
+public handler NSArrayToCRLFDelimitString(in pNSArray as ObjcObject) returns String
+  variable tNSArray as ObjcObject
+  variable tNSString as ObjcObject
+  variable tStr as String
+  put "\r\n" into tStr
+  unsafe
+    put ObjC_NSArrayComponentsJoinedByString(pNSArray, StringToNSString(tStr)) into tNSString
+  end unsafe
+  return StringFromNSString(tNSString)
+end handler
+
+public handler lcbNSSpeechSynthGetAvailableVoices() returns String
+	if sNSSpeechSynth is nothing then
+			variable tStr as String
+			put "An Error Occured" into tStr
+			return tStr
+	else
+   	unsafe
+			variable tNSArray as ObjcID
+			put ObjC_NSSpeechSynthAvailableVoices() into tNSArray
+  			-- put ObjC_NSSpeechSynthGetProperty(sNSSpeechSynth,StringToNSString("someproperty")) into tNSArray
+		  return NSArrayToCRLFDelimitString(tNSArray)
+   	end unsafe
+	end if
+end handler
+
+public handler lcbNSSpeechSynthSetVoice(in pVoiceStr as String) returns Boolean
+		variable tSuccess as Boolean
+   	unsafe
+			put ObjC_NSSpeechSynthSetVoice(sNSSpeechSynth,StringToNSString(pVoiceStr)) into tSuccess
+  			-- put ObjC_NSSpeechSynthGetProperty(sNSSpeechSynth,StringToNSString("someproperty")) into tNSArray
+		  return tSuccess
+   	end unsafe
 end handler
 
 end library
