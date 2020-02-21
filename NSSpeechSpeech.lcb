@@ -79,7 +79,7 @@ public handler NSArrayToCRLFDelimitString(in pNSArray as ObjcObject) returns Str
   variable tNSArray as ObjcObject
   variable tNSString as ObjcObject
   variable tStr as String
-  put "\r\n" into tStr
+  put "\n" into tStr
   unsafe
     put ObjC_NSArrayComponentsJoinedByString(pNSArray, StringToNSString(tStr)) into tNSString
   end unsafe
