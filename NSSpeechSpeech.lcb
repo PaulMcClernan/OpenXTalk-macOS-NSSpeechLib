@@ -10,7 +10,7 @@ metadata OS is "macOS"
 
 
 variable sNSSpeechSynth as ObjcObject
-
+variable sNSSpeechFinishedDelegate as ObjcObject
 
 private foreign handler objC_NSURLfileURLWithPath(in pPathString as ObjcId) returns ObjcID binds to "objc:NSURL.+fileURLWithPath:"
 private foreign handler ObjC_NSArrayComponentsJoinedByString(in pObj as ObjcID, in pSeperator as ObjcId) returns ObjcId binds to "objc:NSArray.-componentsJoinedByString:"
@@ -20,7 +20,11 @@ private foreign handler ObjC_NSSpeechSynthAlloc() returns optional ObjcID binds 
 
 -- bind the initialisation of new object - ok
 private foreign handler ObjC_NSSpeechSynthInitWithVoice(in pNSSpeechSynthObj as ObjcID, in pNSStrVoiceName as ObjcId ) \
-			returns optional ObjcRetainedID binds to "objc:AppKit>NSSpeechSynthesizer.-initWithVoice:" -- can be null for default voice
+			returns optional ObjcRetainedId binds to "objc:AppKit>NSSpeechSynthesizer.-initWithVoice:" -- can be null for default voice
+
+private foreign handler ObjC_NSSpeechSynthSetDelegate(in pNSSpeechSynthObj as ObjcID, in pDelegateObj as ObjcId ) \
+		returns nothing binds to "objc:AppKit>NSSpeechSynthesizer.-setDelegate:"
+			-- [speech setDelegate:self];
 
 private foreign handler ObjC_NSSpeechSynthSetVoice(in pNSSpeechSynthObj as ObjcID, in pNSStrVoiceName as ObjcId ) \
 			returns CBool binds to "objc:AppKit>NSSpeechSynthesizer.-setVoice:" -- can be null for default voice
@@ -39,12 +43,27 @@ private foreign handler ObjC_NSSpeechSynthStartSpeakingString(in pNSSpeechSynthO
 private foreign handler ObjC_NSSpeechSynthStartSpeakingStringToURL(in pNSSpeechSynthObj as ObjcID, in pNSStrToSpeak as ObjcID, in pNSURLSoundFile as ObjcID) \
 			returns CBool binds to "objc:AppKit>NSSpeechSynthesizer.-startSpeakingString:toURL:" --Begins synthesizing text into a sound (AIFF) file.
 
+handler lcbNSSpeechDidFinishSpeaking(in pSender as ObjcId, in pDidFinish as CBool) returns optional any
+				-- (void)speechSynthesizer:(NSSpeechSynthesizer *)sender  didFinishSpeaking:(BOOL)finishedSpeaking;
+			-- Parameters
+			-- sender = An NSSpeechSynthesizer object that has stopped speaking into the sound output device.
+			-- success -- YES when speaking completed normally, NO if speaking is stopped prematurely for any reason.
+			send "lcbNSSpeechFinished"
+			post "lcbNSSpeechFinished"
+end handler
+
+public handler GetNSSpeechSynthesizerDelegate() returns ObjcObject
+	return CreateObjcDelegate("NSSpeechSynthesizerDelegate", { "speechSynthesizer:didFinishSpeaking:": lcbNSSpeechDidFinishSpeaking })
+end handler
+
 public handler lcbNSSpeechSynthInit(in pVoiceStr as String) returns optional any
 	variable tNSString as ObjcObject
 	unsafe
 		put ObjC_NSSpeechSynthAlloc() into sNSSpeechSynth
 		put ObjC_NSSpeechSynthInitWithVoice(sNSSpeechSynth,StringToNSString(pVoiceStr)) into sNSSpeechSynth
 		put ObjC_NSSpeechSyntCurrenthVoice(sNSSpeechSynth) into tNSString
+		put GetNSSpeechSynthesizerDelegate() into sNSSpeechFinishedDelegate
+		ObjC_NSSpeechSynthSetDelegate(sNSSpeechSynth,sNSSpeechFinishedDelegate)
 	end unsafe
 	if sNSSpeechSynth is nothing then
 		return false
@@ -57,6 +76,8 @@ public handler lcbNSSpeechSynthSpeakString(in pSpeakString as String) returns op
 	variable tSuccess as Boolean
 	if sNSSpeechSynth is not nothing then
 		unsafe
+			ObjC_NSSpeechSynthSetDelegate(sNSSpeechSynth,sNSSpeechFinishedDelegate)
+
 			put ObjC_NSSpeechSynthStartSpeakingString(sNSSpeechSynth,StringToNSString(pSpeakString)) into tSuccess
 		end unsafe
 	end if
@@ -79,6 +100,7 @@ public handler NSArrayToCRLFDelimitString(in pNSArray as ObjcObject) returns Str
   variable tNSArray as ObjcObject
   variable tNSString as ObjcObject
   variable tStr as String
+  -- put "\r\n" into tStr
   put "\n" into tStr
   unsafe
     put ObjC_NSArrayComponentsJoinedByString(pNSArray, StringToNSString(tStr)) into tNSString
