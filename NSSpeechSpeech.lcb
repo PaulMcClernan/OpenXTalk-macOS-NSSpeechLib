@@ -2,6 +2,9 @@ library community.paulmcclernan.speechsynth
 
 use com.livecode.foreign
 use com.livecode.objc
+use com.livecode.widget
+use com.livecode.engine
+use com.livecode.library.widgetutils
 
 metadata title is "NSSpeechSynth"
 metadata author is "Paul McClernan"
@@ -23,7 +26,7 @@ private foreign handler ObjC_NSArrayComponentsJoinedByString(in pObj as ObjcID, 
 private foreign handler ObjC_NSSpeechSynthAlloc() returns optional ObjcID binds to "objc:AppKit>NSSpeechSynthesizer.+alloc"
 
 -- bind the initialisation of new object - ok
-private foreign handler ObjC_NSSpeechSynthInitWithVoice(in pNSSpeechSynthObj as ObjcID, in pNSStrVoiceName as ObjcId ) \
+private foreign handler ObjC_NSSpeechSynthInitWithVoice(in pNSSpeechSynthObj as ObjcID, in pNSStrVoiceName as optional ObjcId ) \
 			returns optional ObjcRetainedId binds to "objc:AppKit>NSSpeechSynthesizer.-initWithVoice:" -- can be null for default voice
 
 private foreign handler ObjC_NSSpeechSynthSetDelegate(in pNSSpeechSynthObj as ObjcID, in pDelegateObj as ObjcId ) \
@@ -45,6 +48,8 @@ private foreign handler	ObjC_NSSpeechSynthSetProp(in pNSSpeechSynthObj as ObjcId
 			returns nothing binds to "objc:AppKit>NSSpeechSynthesizer.-setValue:forKey:"
 
 private foreign handler ObjC_NSSpeechSynthAvailableVoices() returns ObjcID binds to "objc:AppKit>NSSpeechSynthesizer.+availableVoices"
+
+private foreign handler ObjC_NSSpeechSynthAttributesForVoice(in pNSStrVoiceID as ObjcID) returns optional ObjcID binds to "objc:AppKit>NSSpeechSynthesizer.+attributesForVoice:"
 
 private foreign handler ObjC_NSSpeechSynthStartSpeakingString(in pNSSpeechSynthObj as ObjcID, in pNSStrToSpeak as optional ObjcID ) \
 			returns CBool binds to "objc:AppKit>NSSpeechSynthesizer.-startSpeakingString:"
@@ -70,7 +75,7 @@ handler lcbNSSpeechDidFinishSpeaking(in pSender as ObjcObject, in pDidFinish as 
 			-- sender = An NSSpeechSynthesizer object that has stopped speaking into the sound output device.
 			-- success -- YES when speaking completed normally, NO if speaking is stopped prematurely for any reason.
 			-- send "lcbNSSpeechFinished"
-			post "lcbNSSpeechFinished"
+			post "lcbNSSpeechFinished" && pDidFinish formatted as string
 end handler
 
 public handler GetNSSpeechSynthesizerDelegate() returns ObjcObject
@@ -78,12 +83,18 @@ public handler GetNSSpeechSynthesizerDelegate() returns ObjcObject
 end handler
 
 public handler lcbNSSpeechSynthInit(in pVoiceStr as String) returns optional any
-	variable tNSString as ObjcObject
+	--log pVoiceStr
+	-- if pVoiceStr is nothing then
+	--	variable tNSString as ObjcObject
 	if sNSSpeechSynth is nothing then
 		unsafe
 			put ObjC_NSSpeechSynthAlloc() into sNSSpeechSynth
-			put ObjC_NSSpeechSynthInitWithVoice(sNSSpeechSynth,StringToNSString(pVoiceStr)) into sNSSpeechSynth
-			put ObjC_NSSpeechSyntCurrenthVoice(sNSSpeechSynth) into tNSString
+			if pVoiceStr is "" then
+				put ObjC_NSSpeechSynthInitWithVoice(sNSSpeechSynth,nothing) into sNSSpeechSynth
+			else
+				put ObjC_NSSpeechSynthInitWithVoice(sNSSpeechSynth,StringToNSString(pVoiceStr)) into sNSSpeechSynth
+			end if
+			--	put ObjC_NSSpeechSyntCurrenthVoice(sNSSpeechSynth) into tNSString
 			put GetNSSpeechSynthesizerDelegate() into sNSSpeechFinishedDelegate
 			ObjC_NSSpeechSynthSetDelegate(sNSSpeechSynth,sNSSpeechFinishedDelegate)
 		end unsafe
@@ -183,7 +194,7 @@ public handler NSArrayToCRLFDelimitString(in pNSArray as ObjcObject) returns Str
   -- put "\r\n" into tStr
   put "\n" into tStr
   unsafe
-    put ObjC_NSArrayComponentsJoinedByString(pNSArray, StringToNSString(tStr)) into tNSString
+     put ObjC_NSArrayComponentsJoinedByString(pNSArray, StringToNSString(tStr)) into tNSString
   end unsafe
   return StringFromNSString(tNSString)
 end handler
@@ -201,6 +212,18 @@ public handler lcbNSSpeechSynthGetAvailableVoices() returns String
 		  return NSArrayToCRLFDelimitString(tNSArray)
    	end unsafe
 	end if
+end handler
+
+public handler lcbNSSpeechSynthGetVoiceName(in pVoiceIDStr as String) returns String
+	unsafe
+			variable tNSDictVoiceAttributes as ObjcID
+			variable tVoiceAttributesArray as Array
+			put ObjC_NSSpeechSynthAttributesForVoice(StringToNSString(pVoiceIDStr)) into tNSDictVoiceAttributes
+			put ArrayFromNSDictionary(tNSDictVoiceAttributes) into tVoiceAttributesArray
+			-- log tVoiceAttributesArray
+			--	return tVoiceAttributesArray["VoiceNameRoot"]
+			return tVoiceAttributesArray["VoiceName"]
+   end unsafe
 end handler
 
 public handler lcbNSSpeechSynthSetVoice(in pVoiceStr as String) returns Boolean
