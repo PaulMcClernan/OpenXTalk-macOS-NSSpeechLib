@@ -38,7 +38,7 @@ private foreign handler ObjC_NSSpeechSynthSetVoice(in pNSSpeechSynthObj as ObjcI
 private foreign handler ObjC_NSSpeechSyntCurrenthVoice(in pNSSpeechSynthObj as ObjcId) \
 			returns ObjcId binds to "objc:AppKit>NSSpeechSynthesizer.voice"
 
-private foreign handler ObjC_NSSpeechSynthGetVolume(in pNSSpeechSynthObj as ObjcId) \
+private foreign handler ObjC_NSSpeechSynthGetVolume(in pNSSpeechSynthObj as optional ObjcId) \
 			returns NaturalFloat binds to "objc:AppKit>NSSpeechSynthesizer.volume"
 
 private foreign handler ObjC_NSSpeechSynthGetProp(in pNSSpeechSynthObj as ObjcID, in pNSStrPropToGet as ObjcID) \
@@ -226,11 +226,69 @@ public handler lcbNSSpeechSynthGetVoiceName(in pVoiceIDStr as String) returns St
    end unsafe
 end handler
 
+public handler lcbNSSpeechSynthGetVoiceDemoText(in pVoiceIDStr as String) returns String
+	unsafe
+			variable tNSDictVoiceAttributes as ObjcID
+			variable tVoiceAttributesArray as Array
+			put ObjC_NSSpeechSynthAttributesForVoice(StringToNSString(pVoiceIDStr)) into tNSDictVoiceAttributes
+			put ArrayFromNSDictionary(tNSDictVoiceAttributes) into tVoiceAttributesArray
+			return tVoiceAttributesArray["VoiceDemoText"]
+   end unsafe
+end handler
+
+public handler lcbNSSpeechSynthGetVoiceGender(in pVoiceIDStr as String) returns String
+	unsafe
+			variable tNSDictVoiceAttributes as ObjcID
+			variable tVoiceAttributesArray as Array
+			put ObjC_NSSpeechSynthAttributesForVoice(StringToNSString(pVoiceIDStr)) into tNSDictVoiceAttributes
+			put ArrayFromNSDictionary(tNSDictVoiceAttributes) into tVoiceAttributesArray
+			return tVoiceAttributesArray["VoiceGender"]
+   end unsafe
+end handler
+
+public handler lcbNSSpeechSynthGetVoiceAge(in pVoiceIDStr as String) returns String
+	unsafe
+			variable tNSDictVoiceAttributes as ObjcID
+			variable tVoiceAttributesArray as Array
+			put ObjC_NSSpeechSynthAttributesForVoice(StringToNSString(pVoiceIDStr)) into tNSDictVoiceAttributes
+			put ArrayFromNSDictionary(tNSDictVoiceAttributes) into tVoiceAttributesArray
+			return tVoiceAttributesArray["VoiceGender"]
+   end unsafe
+end handler
+
+public handler lcbNSSpeechSynthGetVoiceLanguage(in pVoiceIDStr as String) returns String
+	unsafe
+			variable tNSDictVoiceAttributes as ObjcID
+			variable tVoiceAttributesArray as Array
+			put ObjC_NSSpeechSynthAttributesForVoice(StringToNSString(pVoiceIDStr)) into tNSDictVoiceAttributes
+			put ArrayFromNSDictionary(tNSDictVoiceAttributes) into tVoiceAttributesArray
+			return tVoiceAttributesArray["VoiceLanguage"]
+   end unsafe
+end handler
+public handler lcbNSSpeechSynthGetVoiceLocale(in pVoiceIDStr as String) returns String
+	unsafe
+			variable tNSDictVoiceAttributes as ObjcID
+			variable tVoiceAttributesArray as Array
+			put ObjC_NSSpeechSynthAttributesForVoice(StringToNSString(pVoiceIDStr)) into tNSDictVoiceAttributes
+			put ArrayFromNSDictionary(tNSDictVoiceAttributes) into tVoiceAttributesArray
+			return tVoiceAttributesArray["VoiceGender"]
+   end unsafe
+end handler
+
+public handler lcbNSSpeechSynthGetVoiceVersion(in pVoiceIDStr as String) returns String
+	unsafe
+			variable tNSDictVoiceAttributes as ObjcID
+			variable tVoiceAttributesArray as Array
+			put ObjC_NSSpeechSynthAttributesForVoice(StringToNSString(pVoiceIDStr)) into tNSDictVoiceAttributes
+			put ArrayFromNSDictionary(tNSDictVoiceAttributes) into tVoiceAttributesArray
+			return tVoiceAttributesArray["VoiceVersion"]
+   end unsafe
+end handler
+
 public handler lcbNSSpeechSynthSetVoice(in pVoiceStr as String) returns Boolean
 		variable tSuccess as Boolean
    	unsafe
 			put ObjC_NSSpeechSynthSetVoice(sNSSpeechSynth,StringToNSString(pVoiceStr)) into tSuccess
-  			-- put ObjC_NSSpeechSynthGetProperty(sNSSpeechSynth,StringToNSString("someproperty")) into tNSArray
 		  return tSuccess
    	end unsafe
 end handler
@@ -238,7 +296,6 @@ end handler
 public handler lcbNSSpeechSynthGetVolume() returns String
 	variable tVolume as optional NaturalFloat
 	unsafe
-	-- put objC_AVMIDIPlayerInfo(mAVMIDIPlayerInstance,StringToNSString("duration")) into tDuration
 		put ObjC_NSSpeechSynthGetVolume(sNSSpeechSynth) into tVolume
  		return tVolume formatted as string
 	end unsafe
@@ -246,21 +303,18 @@ end handler
 
 public handler lcbNSSpeechSynthSetVolume(in pVolume as NaturalFloat) returns nothing
 	unsafe
-	-- put objC_AVMIDIPlayerInfo(mAVMIDIPlayerInstance,StringToNSString("duration")) into tDuration
 	ObjC_NSSpeechSynthSetProp(sNSSpeechSynth,NumberToNSNumber(pVolume),StringToNSString("volume"))
 	end unsafe
 end handler
 
 public handler lcbNSSpeechSynthSetRate(in pRateWPM as NaturalFloat) returns nothing
 	unsafe
-	-- put objC_AVMIDIPlayerInfo(mAVMIDIPlayerInstance,StringToNSString("duration")) into tDuration
 	ObjC_NSSpeechSynthSetProp(sNSSpeechSynth,NumberToNSNumber(pRateWPM),StringToNSString("rate"))
 	end unsafe
 end handler
 
 public handler lcbNSSpeechSynthSetPitchBase(in pPitch as NaturalFloat) returns nothing
 	unsafe
-	-- put objC_AVMIDIPlayerInfo(mAVMIDIPlayerInstance,StringToNSString("duration")) into tDuration
 	ObjC_NSSpeechSynthSetProp(sNSSpeechSynth,NumberToNSNumber(pPitch),StringToNSString("pitchBase"))
 	end unsafe
 end handler
