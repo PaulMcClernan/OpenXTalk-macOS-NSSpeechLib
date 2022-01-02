@@ -1,4 +1,4 @@
-library community.paulmcclernan.NSspeechLib
+library org.openxtalk.paulmcclernan.NSspeechLib
 
 use com.livecode.foreign
 use com.livecode.objc
