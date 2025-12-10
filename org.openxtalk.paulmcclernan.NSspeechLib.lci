@@ -1,0 +1,34 @@
+import module org.openxtalk.paulmcclernan.NSspeechLib
+  use com.livecode.objc
+  use com.livecode.foreign
+  use com.livecode.engine
+  use com.livecode.string
+  use com.livecode.arithmetic
+  use com.livecode.logic
+  use com.livecode.binary
+  use com.livecode.list
+  use com.livecode.type
+  use com.livecode.array
+  handler GetNSSpeechSynthesizerDelegate() returns ObjcObject
+  handler NSspeechLibInit(in pVoiceStr as String) returns optional any
+  handler NSspeechSpeakString(in pSpeakString as String) returns optional Boolean
+  handler NSspeechSynthStopSpeaking() returns nothing
+  handler NSspeechSynthStopAtBoundary(in tBoundaryStr as String) returns nothing
+  handler NSspeechSynthPauseAtBoundary(in tBoundaryStr as String) returns nothing
+  handler NSspeechContinue() returns nothing
+  handler NSspeechSpeechStringToFile(in pSpeakString as String, in pOutFilePath as String) returns optional Boolean
+  handler NSArrayToCRLFDelimitString(in pNSArray as ObjcObject) returns String
+  handler NSspeechGetVoiceIDs() returns String
+  handler NSspeechGetVoiceName(in pVoiceIDStr as String) returns String
+  handler NSspeechGetVoiceDemoText(in pVoiceIDStr as String) returns String
+  handler NSspeechGetVoiceGender(in pVoiceIDStr as String) returns String
+  handler NSspeechGetVoiceAge(in pVoiceIDStr as String) returns String
+  handler NSspeechGetVoiceLanguage(in pVoiceIDStr as String) returns String
+  handler NSspeechGetVoiceLocale(in pVoiceIDStr as String) returns String
+  handler NSspeechGetVoiceVersion(in pVoiceIDStr as String) returns String
+  handler NSspeechSetVoice(in pVoiceStr as String) returns Boolean
+  handler NSspeechGetVolume() returns String
+  handler NSspeechSetVolume(in pVolume as NaturalFloat) returns nothing
+  handler NSspeechSetRate(in pVolume as NaturalFloat) returns nothing
+  handler NSspeechSetPitchBase(in pVolume as NaturalFloat) returns nothing
+end module

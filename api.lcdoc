@@ -1,0 +1,87 @@
+Library: 
+
+Type: 
+
+author: Paul McClernan
+
+version: 0.5.0
+
+OS: macOS
+
+
+Name: NSspeechSpeakString
+
+Type: function
+
+Syntax: NSspeechSpeakString(TextToSpeak)
+
+Summary: Attempts to speak text passed to it using the NSspeechLib
+
+OS: mac,ios
+
+Platforms: desktop,mobile
+
+Edition: Community
+
+Parameters: 
+
+TextToSpeak: a string that is a VoiceID of a voice in the system or empty for default voice.
+
+Returns: Boolean, true if the text success was successfully passed to the speech synthesizer
+
+Example:
+on openCard
+	if NSspeechLibInit() is empty then -- NSspeechLib is already initialized
+	 	get NSspeechSpeakString("Welcome to NS speech Lib!")
+		if it is false synthesizing
+		   answer error "An error occured!""
+		end if
+	end if
+end openCard
+
+Description:
+Atenopts to Speak the text string passed to it using the NSspeechLib.
+If there is a problem passing the text, then the result will be false.
+
+
+
+Name: NSspeechLibInit
+
+Type: function
+
+Syntax: NSspeechLibInit([VoiceIDString])
+
+Summary: Attempts to Initialize NSSpeech library and returns the result or empty if already initialized.
+
+OS: mac,ios
+
+Platforms: desktop,mobile
+
+Edition: Community
+
+Parameters: 
+
+VoiceIDString: a string that is a VoiceID of a voice in the system or empty for default voice.
+
+Returns: Boolean, true on success, false on error, or empty if the library has already been initialized.
+
+Example:
+on openCard
+	get NSspeechLibInit()
+    if it is true then
+	 	Answer "NSspeechLib initialization was successful"
+	else if it is empty
+		Answer "NSspeechLib was already initialized"
+	else if it is false
+		Answer error "NSspeechLib failed to initialize"
+	end if
+end openCard
+
+Description:
+Use NSspeechLibInit to start the NSspeechLib, pass a valid VoiceID string to load
+a specific speechsynth voice in the system. A line deleimited list of VoiceIDs
+can be retreived prior to intitalization with NSspeechGetVoiceIDs() function.
+If an empty string is passed the default voice will be loaded.
+
+
+

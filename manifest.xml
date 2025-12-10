@@ -1,0 +1,41 @@
+<package version="0.0">
+  <name>org.openxtalk.paulmcclernan.NSspeechLib</name>
+  <title>NSspeechSynth</title>
+  <author>Paul McClernan</author>
+  <version>0.5.0</version>
+  <license>community</license>
+  <type>library</type>
+  <requires name="com.livecode.objc"/>
+  <requires name="com.livecode.foreign"/>
+  <requires name="com.livecode.engine"/>
+  <requires name="com.livecode.string"/>
+  <requires name="com.livecode.arithmetic"/>
+  <requires name="com.livecode.logic"/>
+  <requires name="com.livecode.binary"/>
+  <requires name="com.livecode.list"/>
+  <requires name="com.livecode.type"/>
+  <requires name="com.livecode.array"/>
+  <metadata key="OS">macOS</metadata>
+  <handler name="GetNSSpeechSynthesizerDelegate" parameters="" return="ObjcObject"/>
+  <handler name="NSspeechLibInit" parameters="in string" return="optional any"/>
+  <handler name="NSspeechSpeakString" parameters="in string" return="optional boolean"/>
+  <handler name="NSspeechSynthStopSpeaking" parameters="" return="nothing"/>
+  <handler name="NSspeechSynthStopAtBoundary" parameters="in string" return="nothing"/>
+  <handler name="NSspeechSynthPauseAtBoundary" parameters="in string" return="nothing"/>
+  <handler name="NSspeechContinue" parameters="" return="nothing"/>
+  <handler name="NSspeechSpeechStringToFile" parameters="in string,in string" return="optional boolean"/>
+  <handler name="NSArrayToCRLFDelimitString" parameters="in ObjcObject" return="string"/>
+  <handler name="NSspeechGetVoiceIDs" parameters="" return="string"/>
+  <handler name="NSspeechGetVoiceName" parameters="in string" return="string"/>
+  <handler name="NSspeechGetVoiceDemoText" parameters="in string" return="string"/>
+  <handler name="NSspeechGetVoiceGender" parameters="in string" return="string"/>
+  <handler name="NSspeechGetVoiceAge" parameters="in string" return="string"/>
+  <handler name="NSspeechGetVoiceLanguage" parameters="in string" return="string"/>
+  <handler name="NSspeechGetVoiceLocale" parameters="in string" return="string"/>
+  <handler name="NSspeechGetVoiceVersion" parameters="in string" return="string"/>
+  <handler name="NSspeechSetVoice" parameters="in string" return="boolean"/>
+  <handler name="NSspeechGetVolume" parameters="" return="string"/>
+  <handler name="NSspeechSetVolume" parameters="in NaturalFloat" return="nothing"/>
+  <handler name="NSspeechSetRate" parameters="in NaturalFloat" return="nothing"/>
+  <handler name="NSspeechSetPitchBase" parameters="in NaturalFloat" return="nothing"/>
+</package>
